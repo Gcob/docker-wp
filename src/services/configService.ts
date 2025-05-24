@@ -1,6 +1,6 @@
 import fs from 'fs';
 import inquirer from "inquirer";
-import Config, {IpamSubnetConfig, PortMapping, RessourcesPreset} from "../models/Config.js";
+import GeneralConfig, {IpamSubnetConfig, PortMapping, RessourcesPreset} from "../models/GeneralConfig";
 import chalk from "chalk";
 
 class ConfigService {
@@ -23,11 +23,11 @@ class ConfigService {
         }
     }
 
-    saveConfig(config: Config) {
+    saveConfig(config: GeneralConfig) {
         fs.writeFileSync(this.configFilePath, JSON.stringify(config, null, 2));
     }
 
-    getConfig(): Config {
+    getConfig(): GeneralConfig {
         if (!fs.existsSync(this.configFilePath)) {
             throw new Error(`Configuration file not found at ${this.configFilePath}`);
         }
@@ -41,10 +41,10 @@ class ConfigService {
         }
     }
 
-    async runWizard(options): Promise<Config> {
+    async runWizard(options): Promise<GeneralConfig> {
         const oldConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
 
-        const configEdited: Config = await inquirer.prompt([
+        const configEdited: GeneralConfig = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'os',

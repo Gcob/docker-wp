@@ -1,4 +1,4 @@
-export default interface Config {
+export default interface GeneralConfig {
     os: 'linux/ubuntu';
     environment: 'dev' | 'prod';
     sites_root_dir: string;
