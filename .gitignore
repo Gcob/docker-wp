@@ -1,3 +1,7 @@
 .idea
+.vscode
+.DS_Store
 
-db-data
+.env
+
+node_modules
