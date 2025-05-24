@@ -31,10 +31,7 @@ class ConfigService {
             },
         ];
 
-        inquirer.prompt(questions).then(answers => {
-            this.saveConfig(answers);
-            console.log('Configuration saved successfully.');
-        });
+        console.log('Starting configuration wizard...');
     }
 }
 

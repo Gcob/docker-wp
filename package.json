@@ -2,10 +2,15 @@
   "name": "docker-wp-cli",
   "version": "1.0.0",
   "description": "Run multiple WordPress sites using nginx, php-fpm, mariadb and docker-compose.",
-  "main": "index.js",
+  "main": "dist/cli.js",
   "type": "module",
   "bin": {
-    "dwpc": "./index.js"
+    "dwpc": "./dist/cli.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc && chmod +x dist/cli.js",
+    "watch": "tsc --watch"
   },
   "keywords": [
     "wordpress",
@@ -20,5 +25,11 @@
   "dependencies": {
     "commander": "^14.0.0",
     "inquirer": "^12.6.2"
+  },
+  "devDependencies": {
+    "@inquirer/type": "^3.0.7",
+    "@types/node": "^22.15.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

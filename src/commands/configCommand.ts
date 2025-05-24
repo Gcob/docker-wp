@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import configService from "../services/configService.js";
+import configService from "../services/configService";
 
 const configCommand = new Command('config');
 
