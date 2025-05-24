@@ -1,4 +1,4 @@
-import Config from "../models/Config";
+import Config from "../models/Config.js";
 declare class ConfigService {
     configFilePath: string;
     constructor();
