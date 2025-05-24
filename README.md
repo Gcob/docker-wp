@@ -42,13 +42,19 @@ docker compose version
 Install the `docker-wp` CLI tool globally:
 
 ```bash
-npm install -g docker-wp
+npm install -g docker-wp-cli
+```
+
+Or update
+
+```bash
+npm update -g docker-wp-cli
 ```
 
 Configure the tool by running:
 
 ```bash
-dwp config
+dwpc config
 ```
 
 This will launch a wizard to configure the tool.

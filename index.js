@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-console.log("Hello world from docker-wp.");
+import 'src/commands/hello.js';
