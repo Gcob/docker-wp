@@ -2,8 +2,9 @@ export default interface Config {
     os: 'linux/ubuntu';
     environment: 'dev' | 'prod';
     sites_root_dir: string;
-    php_versions: number[];
     ressources_preset: RessourcesPreset;
+    php_versions: number[];
+    mariadb_root_password?: string;
     ports_strategy?: PortMapping | IpamSubnetConfig;
 }
 export declare enum RessourcesPreset {

@@ -1,7 +1,6 @@
 import fs from 'fs';
 import inquirer from "inquirer";
 import { IpamSubnetConfig, PortMapping, RessourcesPreset } from "../models/Config.js";
-import dockerComposeService from "./dockerComposeService.js";
 import chalk from "chalk";
 class ConfigService {
     constructor() {
@@ -20,6 +19,18 @@ class ConfigService {
     }
     saveConfig(config) {
         fs.writeFileSync(this.configFilePath, JSON.stringify(config, null, 2));
+    }
+    getConfig() {
+        if (!fs.existsSync(this.configFilePath)) {
+            throw new Error(`Configuration file not found at ${this.configFilePath}`);
+        }
+        const configContent = fs.readFileSync(this.configFilePath, 'utf-8');
+        try {
+            return JSON.parse(configContent);
+        }
+        catch (error) {
+            throw new Error(`Failed to parse configuration file: ${error.message}`);
+        }
     }
     async runWizard(options) {
         const oldConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
@@ -48,6 +59,21 @@ class ConfigService {
                 name: 'sites_root_dir',
                 message: 'Enter the WordPress root websites directory:',
                 default: oldConfig?.sites_root_dir ?? '',
+                filter: (input) => {
+                    return input ? input.trim() : '';
+                },
+            },
+            {
+                type: 'list',
+                name: 'ressources_preset',
+                message: 'Select the resource allocation preset:',
+                choices: [
+                    { name: RessourcesPreset.Micro, value: 'micro' },
+                    { name: RessourcesPreset.Small, value: 'small' },
+                    { name: RessourcesPreset.Medium, value: 'medium' },
+                    { name: RessourcesPreset.Large, value: 'large' },
+                ],
+                default: oldConfig?.ressources_preset ?? 'small',
             },
             {
                 type: 'checkbox',
@@ -64,18 +90,16 @@ class ConfigService {
                 default: oldConfig?.php_versions ?? [],
             },
             {
-                type: 'list',
-                name: 'ressources_preset',
-                message: 'Select the resource allocation preset:',
-                choices: [
-                    { name: RessourcesPreset.Micro, value: 'micro' },
-                    { name: RessourcesPreset.Small, value: 'small' },
-                    { name: RessourcesPreset.Medium, value: 'medium' },
-                    { name: RessourcesPreset.Large, value: 'large' },
-                ],
-                default: oldConfig?.ressources_preset ?? 'small',
+                type: 'input',
+                name: 'mariadb_root_password',
+                message: 'Enter the MariaDB root password (leave empty to allow no password):',
+                default: oldConfig?.mariadb_root_password ?? '',
+                filter: (input) => {
+                    return input ? input.trim() : undefined;
+                }
             },
         ]);
+        await this.runWizard__checkAndCreateRootDir(configEdited.sites_root_dir);
         console.log(chalk.yellow('--- Docker Compose networks ipam subnets ---'));
         console.log('Use a subnet to avoid port conflicts with other services, such as 80, 443, etc.');
         console.log('If you do not want to use a subnet, you will need to select each port binding.');
@@ -103,7 +127,7 @@ class ConfigService {
                 throw new Error(`Unknown port strategy selected: ${portStrategySelected}`);
         }
         this.saveConfig(configEdited);
-        dockerComposeService.applyConfig(configEdited);
+        return configEdited;
     }
     async runWizard__createPortMapping(oldPortMapping) {
         console.log(chalk.yellow('\n--- Port Mapping Configuration ---'));
@@ -248,6 +272,30 @@ class ConfigService {
         console.log('   - Containers will be accessible via their container IPs within this subnet');
         console.log('   - Use docker network ls and docker network inspect to check for conflicts');
         return ipamConfig;
+    }
+    async runWizard__checkAndCreateRootDir(sites_root_dir) {
+        if (!sites_root_dir) {
+            throw new Error('The WordPress root websites directory cannot be empty.');
+        }
+        const fullPath = sites_root_dir.replace('~', process.env.HOME || process.env.USERPROFILE);
+        if (fs.existsSync(fullPath)) {
+            return;
+        }
+        const createDir = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'createDir',
+                message: `The directory ${fullPath} does not exist. Do you want to create it?`,
+                default: true
+            }
+        ]);
+        if (createDir.createDir) {
+            fs.mkdirSync(fullPath, { recursive: true });
+            console.log(chalk.green(`Directory ${fullPath} created successfully.`));
+        }
+        else {
+            throw new Error(`The directory ${fullPath} does not exist and was not created. Please provide a valid directory.`);
+        }
     }
 }
 const configService = new ConfigService();

@@ -4,9 +4,11 @@ declare class ConfigService {
     constructor();
     createConfigFileIfNotExists(): void;
     saveConfig(config: Config): void;
-    runWizard(options: any): Promise<void>;
+    getConfig(): Config;
+    runWizard(options: any): Promise<Config>;
     runWizard__createPortMapping(oldPortMapping?: PortMapping): Promise<PortMapping>;
     runWizard__createIpamSubnetConfig(oldIpamSubnetConfig?: IpamSubnetConfig): Promise<IpamSubnetConfig>;
+    private runWizard__checkAndCreateRootDir;
 }
 declare const configService: ConfigService;
 export default configService;
