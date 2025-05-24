@@ -58,3 +58,9 @@ dwpc config
 ```
 
 This will launch a wizard to configure the tool.
+
+## Development - Local testing
+
+```bash
+npm install -g .
+```
