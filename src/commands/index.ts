@@ -1,5 +1,5 @@
-import testCommand from './testCommand';
-import configCommand from './configCommand';
+import testCommand from './testCommand.js';
+import configCommand from './configCommand.js';
 
 export default function registerCommands(program) {
     program.addCommand(testCommand);
