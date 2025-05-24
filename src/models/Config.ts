@@ -1,8 +1,10 @@
 export default interface Config {
+    os: 'linux/ubuntu';
     environment: 'dev' | 'prod';
     sites_root_dir: string;
     php_versions: number[];
     ressources_preset: RessourcesPreset;
+    ports_strategy?: PortMapping | IpamSubnetConfig;
 }
 
 export enum RessourcesPreset {
@@ -11,3 +13,104 @@ export enum RessourcesPreset {
     Medium = 'Medium (RAM: 4GB, Cores: 4)',
     Large = 'Large (RAM: 8GB, Cores: 8)',
 }
+
+interface PortStrategy {
+    type: 'ipam' | 'port_mapping';
+}
+
+/**
+ * Undefined ports will not be bind to the host machine.
+ */
+export class PortMapping implements PortStrategy {
+    type: 'port_mapping' = 'port_mapping';
+    http: number = 80;
+    https?: number = 443;
+    mysql?: number = 3306;
+    phpmyadmin?: number = 3307;
+}
+
+export class IpamSubnetConfig implements PortStrategy {
+    type: 'ipam' = 'ipam';
+    subnet: string;
+    gateway: string;
+    ip_range?: string;
+
+    constructor(subnet: string, gateway: string, ip_range?: string) {
+        this.subnet = subnet;
+        this.gateway = gateway;
+        this.ip_range = ip_range;
+    }
+
+    static create(subnet: string): IpamSubnetConfig {
+        if (!this.validate(subnet)) {
+            throw new Error(`Invalid subnet format: ${subnet}`);
+        }
+
+        const gateway = this.calculateGateway(subnet);
+        return new IpamSubnetConfig(subnet, gateway);
+    }
+
+    static validate(subnet: string): boolean {
+        // Regex for CIDR (ex: 192.168.100.0/30)
+        const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+
+        if (!cidrRegex.test(subnet)) {
+            return false;
+        }
+
+        const [ip, prefixLength] = subnet.split('/');
+        const prefix = parseInt(prefixLength);
+
+        // Make sure the prefix length is between 0 and 32
+        if (prefix < 0 || prefix > 32) {
+            return false;
+        }
+
+        // Check if the IP address is valid
+        const octets = ip.split('.').map(Number);
+        return octets.every(octet => octet >= 0 && octet <= 255);
+    }
+
+    private static calculateGateway(subnet: string): string {
+        const [ip, prefixLength] = subnet.split('/');
+        const octets = ip.split('.').map(Number);
+
+        // Par convention, on utilise généralement la première adresse disponible comme gateway
+        // Pour un réseau comme 192.168.100.0/30, la gateway sera 192.168.100.1
+        const lastOctet = octets[3];
+
+        if (lastOctet === 0) {
+            octets[3] = 1;
+        } else {
+            octets[3] = lastOctet + 1;
+        }
+
+        return octets.join('.');
+    }
+
+    getAvailableIPs(): string[] {
+        const [ip, prefixLength] = this.subnet.split('/');
+        const prefix = parseInt(prefixLength);
+        const octets = ip.split('.').map(Number);
+
+        const hostBits = 32 - prefix;
+        const numHosts = Math.pow(2, hostBits) - 2; // -2 for network and broadcast addresses
+
+        const availableIPs: string[] = [];
+        const baseIP = octets[0] * 16777216 + octets[1] * 65536 + octets[2] * 256 + octets[3];
+
+        for (let i = 1; i <= numHosts && i < 100; i++) { //  limit to 100 IPs for practical reasons
+            const currentIP = baseIP + i;
+            const newOctets = [
+                Math.floor(currentIP / 16777216) % 256,
+                Math.floor(currentIP / 65536) % 256,
+                Math.floor(currentIP / 256) % 256,
+                currentIP % 256
+            ];
+            availableIPs.push(newOctets.join('.'));
+        }
+
+        return availableIPs;
+    }
+}
+

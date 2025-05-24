@@ -1,6 +1,8 @@
 import fs from 'fs';
 import inquirer from "inquirer";
-import Config, {RessourcesPreset} from "../models/Config.js";
+import Config, {IpamSubnetConfig, PortMapping, RessourcesPreset} from "../models/Config.js";
+import dockerComposeService from "./dockerComposeService.js";
+import chalk from "chalk";
 
 class ConfigService {
     configFilePath = '~/.docker-wp-cli/config.json';
@@ -30,6 +32,15 @@ class ConfigService {
         const oldConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
 
         const configEdited: Config = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'os',
+                message: 'Select your operating system (note: Only Linux/Ubuntu is currently supported)',
+                choices: [
+                    {name: 'Linux/Ubuntu', value: 'linux/ubuntu'},
+                ],
+                default: oldConfig?.os ?? 'linux/ubuntu',
+            },
             {
                 type: 'list',
                 name: 'environment',
@@ -74,7 +85,45 @@ class ConfigService {
             },
         ])
 
+        console.log(chalk.yellow('--- Docker Compose networks ipam subnets ---'))
+        console.log('Use a subnet to avoid port conflicts with other services, such as 80, 443, etc.')
+        console.log('If you do not want to use a subnet, you will need to select each port binding.')
+        console.log('If want to use a subnet, make sure it is not already used by another service on your host machine.')
+
+        const portStrategySelected = (await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'portStrategySelected',
+                message: 'Select the port strategy:',
+                choices: [
+                    {name: 'Use a subnet', value: 'ipam_subnet'},
+                    {name: 'Select each port binding', value: 'port_mapping'},
+                ],
+                default: oldConfig?.ports_strategy ?? 'ipam_subnet',
+            }
+        ])).portStrategySelected;
+
+        switch (portStrategySelected) {
+            case 'ipam_subnet':
+                configEdited.ports_strategy = await this.runWizard__createIpamSubnetConfig(oldConfig?.ports_strategy);
+                break;
+            case 'port_mapping':
+                configEdited.ports_strategy = await this.runWizard__createPortMapping(oldConfig?.ports_strategy);
+                break;
+            default:
+                throw new Error(`Unknown port strategy selected: ${portStrategySelected}`);
+        }
+
         this.saveConfig(configEdited);
+        dockerComposeService.applyConfig(configEdited);
+    }
+
+    async runWizard__createPortMapping(oldPortMapping?: PortMapping): Promise<PortMapping> {
+
+    }
+
+    async runWizard__createIpamSubnetConfig(oldIpamSubnetConfig?: IpamSubnetConfig): Promise<IpamSubnetConfig> {
+
     }
 }
 

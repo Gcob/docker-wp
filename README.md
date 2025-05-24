@@ -37,7 +37,7 @@ docker -v
 docker compose version
 ```
 
-## Quick start
+## Installation
 
 Install `docker-wp-cli` globally:
 
@@ -51,15 +51,14 @@ Or update
 npm update -g docker-wp-cli
 ```
 
-Configure the tool by running:
+## Commands
 
-```bash
-dwpc config
-```
+- `dwpc config` - Small Wizard to help you configure the project.
+- `dwpc up` - Start the project.
+- `dwpc down` - Stop the project.
+- `dwpc restart` - Restart the project.
 
-This will launch a wizard to configure the tool.
-
-## Development 
+## Development
 
 Local development is done using the `docker-wp` CLI tool.
 
