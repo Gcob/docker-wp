@@ -29,11 +29,10 @@ export declare class IpamSubnetConfig implements PortStrategy {
     type: 'ipam';
     subnet: string;
     gateway: string;
-    ip_range?: string;
-    constructor(subnet: string, gateway: string, ip_range?: string);
+    nginxIp: string;
+    constructor(subnet: string);
     static create(subnet: string): IpamSubnetConfig;
     static validate(subnet: string): boolean;
-    private static calculateGateway;
     getAvailableIPs(): string[];
 }
 export {};

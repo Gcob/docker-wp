@@ -33,12 +33,19 @@ export class IpamSubnetConfig implements PortStrategy {
     type: 'ipam' = 'ipam';
     subnet: string;
     gateway: string;
-    ip_range?: string;
+    nginxIp: string;
 
-    constructor(subnet: string, gateway: string, ip_range?: string) {
+    constructor(subnet: string) {
         this.subnet = subnet;
-        this.gateway = gateway;
-        this.ip_range = ip_range;
+
+        const ips = this.getAvailableIPs();
+
+        if (ips.length < 2) {
+            throw new Error(`Not enough available IPs in the subnet ${subnet}. At least 2 IPs are required.`);
+        }
+
+        this.gateway = ips[0];
+        this.nginxIp = ips[1];
     }
 
     static create(subnet: string): IpamSubnetConfig {
@@ -46,8 +53,7 @@ export class IpamSubnetConfig implements PortStrategy {
             throw new Error(`Invalid subnet format: ${subnet}`);
         }
 
-        const gateway = this.calculateGateway(subnet);
-        return new IpamSubnetConfig(subnet, gateway);
+        return new IpamSubnetConfig(subnet);
     }
 
     static validate(subnet: string): boolean {
@@ -69,23 +75,6 @@ export class IpamSubnetConfig implements PortStrategy {
         // Check if the IP address is valid
         const octets = ip.split('.').map(Number);
         return octets.every(octet => octet >= 0 && octet <= 255);
-    }
-
-    private static calculateGateway(subnet: string): string {
-        const [ip, prefixLength] = subnet.split('/');
-        const octets = ip.split('.').map(Number);
-
-        // Par convention, on utilise généralement la première adresse disponible comme gateway
-        // Pour un réseau comme 192.168.100.0/30, la gateway sera 192.168.100.1
-        const lastOctet = octets[3];
-
-        if (lastOctet === 0) {
-            octets[3] = 1;
-        } else {
-            octets[3] = lastOctet + 1;
-        }
-
-        return octets.join('.');
     }
 
     getAvailableIPs(): string[] {

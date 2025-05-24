@@ -1,6 +1,6 @@
 import fs from 'fs';
 import inquirer from "inquirer";
-import { RessourcesPreset } from "../models/Config.js";
+import { IpamSubnetConfig, PortMapping, RessourcesPreset } from "../models/Config.js";
 import dockerComposeService from "./dockerComposeService.js";
 import chalk from "chalk";
 class ConfigService {
@@ -106,8 +106,148 @@ class ConfigService {
         dockerComposeService.applyConfig(configEdited);
     }
     async runWizard__createPortMapping(oldPortMapping) {
+        console.log(chalk.yellow('\n--- Port Mapping Configuration ---'));
+        console.log('Configure which ports to bind to your host machine.');
+        console.log('Leave empty to disable a service (it won\'t be accessible from the host).');
+        const portMapping = new PortMapping();
+        const answers = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'http',
+                message: 'HTTP port (for web server):',
+                default: oldPortMapping?.http?.toString() ?? '80',
+                validate: (input) => {
+                    if (!input)
+                        return 'HTTP port is required';
+                    const port = parseInt(input);
+                    if (isNaN(port) || port < 1 || port > 65535) {
+                        return 'Please enter a valid port number (1-65535)';
+                    }
+                    return true;
+                }
+            },
+            {
+                type: 'input',
+                name: 'https',
+                message: 'HTTPS port (leave empty to disable HTTPS):',
+                default: oldPortMapping?.https?.toString() ?? '443',
+                validate: (input) => {
+                    if (!input)
+                        return true; // HTTPS is optional
+                    const port = parseInt(input);
+                    if (isNaN(port) || port < 1 || port > 65535) {
+                        return 'Please enter a valid port number (1-65535)';
+                    }
+                    return true;
+                }
+            },
+            {
+                type: 'input',
+                name: 'mysql',
+                message: 'MySQL port (leave empty to disable external MySQL access):',
+                default: oldPortMapping?.mysql?.toString() ?? '3306',
+                validate: (input) => {
+                    if (!input)
+                        return true; // MySQL external access is optional
+                    const port = parseInt(input);
+                    if (isNaN(port) || port < 1 || port > 65535) {
+                        return 'Please enter a valid port number (1-65535)';
+                    }
+                    return true;
+                }
+            },
+            {
+                type: 'input',
+                name: 'phpmyadmin',
+                message: 'phpMyAdmin port (leave empty to disable phpMyAdmin):',
+                default: oldPortMapping?.phpmyadmin?.toString() ?? '3307',
+                validate: (input) => {
+                    if (!input)
+                        return true; // phpMyAdmin is optional
+                    const port = parseInt(input);
+                    if (isNaN(port) || port < 1 || port > 65535) {
+                        return 'Please enter a valid port number (1-65535)';
+                    }
+                    return true;
+                }
+            }
+        ]);
+        // Set the port values, converting to numbers or undefined
+        portMapping.http = parseInt(answers.http);
+        portMapping.https = answers.https ? parseInt(answers.https) : undefined;
+        portMapping.mysql = answers.mysql ? parseInt(answers.mysql) : undefined;
+        portMapping.phpmyadmin = answers.phpmyadmin ? parseInt(answers.phpmyadmin) : undefined;
+        console.log(chalk.green('\n✅ Port mapping configuration completed:'));
+        console.log(`   HTTP: ${portMapping.http}`);
+        if (portMapping.https)
+            console.log(`   HTTPS: ${portMapping.https}`);
+        if (portMapping.mysql)
+            console.log(`   MySQL: ${portMapping.mysql}`);
+        if (portMapping.phpmyadmin)
+            console.log(`   phpMyAdmin: ${portMapping.phpmyadmin}`);
+        return portMapping;
     }
     async runWizard__createIpamSubnetConfig(oldIpamSubnetConfig) {
+        console.log(chalk.yellow('\n--- IPAM Subnet Configuration ---'));
+        console.log('Configure a dedicated /30 subnet for your Docker containers.');
+        console.log('A /30 subnet provides exactly 2 usable IP addresses, which is perfect for this setup.');
+        console.log('This allows containers to use standard ports (80, 443, etc.) without conflicts.');
+        console.log('Common /30 subnet examples:');
+        console.log('  - 192.168.100.0/30 (IPs: 192.168.100.1, 192.168.100.2)');
+        console.log('  - 172.20.0.0/30 (IPs: 172.20.0.1, 172.20.0.2)');
+        console.log('  - 10.0.1.0/30 (IPs: 10.0.1.1, 10.0.1.2)');
+        console.log('  - 172.30.0.0/30 (IPs: 172.30.0.1, 172.30.0.2)');
+        let ipamConfig;
+        let isValid = false;
+        while (!isValid) {
+            const answers = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'subnet',
+                    message: 'Enter the /30 subnet in CIDR notation (e.g., 172.20.0.0/30):',
+                    default: oldIpamSubnetConfig?.subnet ?? '192.168.100.0/30',
+                    validate: (input) => {
+                        if (!input)
+                            return 'Subnet is required';
+                        if (!input.endsWith('/30')) {
+                            return 'Please enter a /30 subnet (e.g., 192.168.100.0/30)';
+                        }
+                        if (!IpamSubnetConfig.validate(input)) {
+                            return 'Please enter a valid /30 CIDR notation (e.g., 192.168.100.0/30)';
+                        }
+                        return true;
+                    }
+                },
+            ]);
+            try {
+                ipamConfig = IpamSubnetConfig.create(answers.subnet);
+                isValid = true;
+            }
+            catch (error) {
+                console.log(chalk.red(`❌ Error: ${error.message}`));
+                console.log(chalk.yellow('Please try again with a different subnet.'));
+                const retry = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'retry',
+                        message: 'Do you want to try again?',
+                        default: true
+                    }
+                ]);
+                if (!retry.retry) {
+                    throw new Error('Subnet configuration cancelled by user');
+                }
+            }
+        }
+        console.log(chalk.green('\n✅ IPAM subnet configuration completed:'));
+        console.log(`   Subnet: ${ipamConfig.subnet}`);
+        console.log(`   Gateway: ${ipamConfig.gateway}`);
+        console.log(chalk.yellow('\n⚠️  Important notes:'));
+        console.log('   - /30 subnets provide exactly 2 usable IP addresses (perfect for small setups)');
+        console.log('   - Make sure this subnet doesn\'t conflict with your existing network');
+        console.log('   - Containers will be accessible via their container IPs within this subnet');
+        console.log('   - Use docker network ls and docker network inspect to check for conflicts');
+        return ipamConfig;
     }
 }
 const configService = new ConfigService();
