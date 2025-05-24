@@ -39,7 +39,7 @@ docker compose version
 
 ## Quick start
 
-Install the `docker-wp` CLI tool globally:
+Install `docker-wp-cli` globally:
 
 ```bash
 npm install -g docker-wp-cli
@@ -59,8 +59,11 @@ dwpc config
 
 This will launch a wizard to configure the tool.
 
-## Development - Local testing
+## Development 
+
+Local development is done using the `docker-wp` CLI tool.
 
 ```bash
 npm install -g .
 ```
+

@@ -1,12 +1,12 @@
 import { Command } from 'commander';
 
-const test = new Command('test');
+const testCommand = new Command('test');
 
-test
-    .description('Simple test command')
+testCommand
+    .description('Simple testCommand command')
     .option('-m, --message <msg>', 'Message to display', 'Hello world')
     .action((options) => {
         console.log(`Test command executed with message: ${options.message}`);
     });
 
-export default test;
+export default testCommand;
