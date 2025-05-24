@@ -23,11 +23,13 @@
   "author": "Jacob Proulx",
   "license": "MIT",
   "dependencies": {
+    "chalk": "^5.4.1",
     "commander": "^14.0.0",
     "inquirer": "^12.6.2"
   },
   "devDependencies": {
     "@inquirer/type": "^3.0.7",
+    "@types/chalk": "^2.2.4",
     "@types/node": "^22.15.21",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

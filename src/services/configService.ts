@@ -1,15 +1,16 @@
 import fs from 'fs';
 import inquirer from "inquirer";
+import Config from "../models/Config";
 
 class ConfigService {
     configFilePath = '~/.docker-wp-cli/config.json';
 
     constructor() {
         this.configFilePath = this.configFilePath.replace('~', process.env.HOME || process.env.USERPROFILE);
-        this.createFileIfNotExists();
+        this.createConfigFileIfNotExists();
     }
 
-    createFileIfNotExists() {
+    createConfigFileIfNotExists() {
         const directory = this.configFilePath.substring(0, this.configFilePath.lastIndexOf('/'));
 
         if (!fs.existsSync(directory)) {
@@ -21,17 +22,23 @@ class ConfigService {
         }
     }
 
-    runWizard(options) {
-        const questions = [
+    saveConfig(config: Config) {
+        fs.writeFileSync(this.configFilePath, JSON.stringify(config, null, 2));
+    }
+
+    async runWizard(options) {
+        const oldConfig = JSON.parse(fs.readFileSync(this.configFilePath, 'utf-8'));
+
+        const configEdited: Config = await inquirer.prompt([
             {
                 type: 'input',
-                name: 'dockerHost',
-                message: 'Enter Docker host (default: unix:///var/run/docker.sock):',
-                default: 'unix:///var/run/docker.sock'
+                name: 'sites_root_dir',
+                message: 'Enter the WordPress root websites directory:',
+                default: oldConfig?.sites_root_dir ?? '',
             },
-        ];
+        ])
 
-        console.log('Starting configuration wizard...');
+        this.saveConfig(configEdited);
     }
 }
 

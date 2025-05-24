@@ -1,8 +1,10 @@
+import Config from "../models/Config";
 declare class ConfigService {
     configFilePath: string;
     constructor();
-    createFileIfNotExists(): void;
-    runWizard(options: any): void;
+    createConfigFileIfNotExists(): void;
+    saveConfig(config: Config): void;
+    runWizard(options: any): Promise<void>;
 }
 declare const configService: ConfigService;
 export default configService;
