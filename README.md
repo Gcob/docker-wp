@@ -37,6 +37,17 @@ docker -v
 docker compose version
 ```
 
+## IN DEVELOPMENT --- ROADMAP
+
+- [x] Initialize the project with basic structure.
+- [x] Use Typescript for the project and other useful packages.
+- [x] Create a general configuration file for the project.
+- [ ] Generate a `docker-compose.yml` file base on the configuration.
+- [ ] Create the docker files for nginx and php.
+- [ ] Add commands to manage the docker compose.
+- [ ] Add a feature to easily import/export the database and use the wp cli to search and replace the URLs.
+- [ ] Add a feature to use rsync for deployment.
+
 ## Installation
 
 Install `docker-wp-cli` globally:
@@ -54,9 +65,9 @@ npm update -g docker-wp-cli
 ## Commands
 
 - `dwpc config` - Small Wizard to help you configure the project.
-- `dwpc up` - Start the project.
-- `dwpc down` - Stop the project.
-- `dwpc restart` - Restart the project.
+- `dwpc up` - Start the project. (Not done yet; this feature is coming soon)
+- `dwpc down` - Stop the project. (Not done yet; this feature is coming soon)
+- `dwpc restart` - Restart the project. (Not done yet; this feature is coming soon)
 
 ## Development
 
