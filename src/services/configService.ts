@@ -1,6 +1,6 @@
 import fs from 'fs';
 import inquirer from "inquirer";
-import GeneralConfig, {IpamSubnetConfig, PortMapping, RessourcesPreset} from "../models/GeneralConfig";
+import GeneralConfig, {IpamSubnetConfig, PortMapping, RessourcesPreset} from "../models/GeneralConfig.js";
 import chalk from "chalk";
 
 class ConfigService {

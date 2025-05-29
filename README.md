@@ -56,11 +56,8 @@ Install `docker-wp-cli` globally:
 npm install -g docker-wp-cli
 ```
 
-Or update
-
-```bash
-npm update -g docker-wp-cli
-```
+To update, uninstall and reinstall the CLI tool. 
+Please note that the application is currently unstable and not ready for production use.
 
 ## Commands
 
